@@ -3,6 +3,7 @@ package dev.yerassyl.aliyev.serviceImp;
 import dev.yerassyl.aliyev.constants.ErrorMessages;
 import dev.yerassyl.aliyev.dto.IdEntity;
 import dev.yerassyl.aliyev.dto.SuccessEntity;
+import dev.yerassyl.aliyev.entity.Event;
 import dev.yerassyl.aliyev.entity.Reservation;
 import dev.yerassyl.aliyev.exception.InvalidRequestException;
 import dev.yerassyl.aliyev.repository.EventRepository;
@@ -60,19 +61,35 @@ public class ReservationServiceImp implements ReservationService {
         //boolean to determine if the Reservation is valid through the existence of the inventory ID.
         //if the inventory ID exists, then continue
         if (validateEventExistenceById(reservationsInventoryId)) {
-            //boolean to determine if there is already a pre-existing reservation that overlaps with the users
-            if (reservationOverlaps(reservations)) {
-                throw new InvalidRequestException(ErrorMessages.INVALID_DATE_OVERLAP);
+            // Упрощенная логика - просто сохраняем бронирование
+            // Проверяем только, что событие существует и активно
+            Event event = eventRepository.getById(reservations.getEventId());
+            if (!event.isStatus()) {
+                throw new InvalidRequestException("Событие неактивно. Невозможно создать бронирование.");
             }
-            //determine if the dates are out of the Inventory's bounds  //TODO: getById is deprecated
-            if (dateIsBefore(eventRepository.getById(reservations.getEventId()).getAvailableFrom(), reservations.getCheckIn()) && dateIsBefore(reservations.getCheckOut(), eventRepository.getById(reservations.getEventId()).getAvailableTo())) {
-                reservations = reservationRepository.save(reservations);
-                IdEntity idEntity = new IdEntity();
-                idEntity.setId(reservations.getId());
-                return idEntity;
-            } else {
-                throw new InvalidRequestException(ErrorMessages.INVALID_RESERVATION_DATES);
+            
+            // Проверяем, не превышен ли лимит мест (100)
+            long currentReservations = reservationRepository.findAll().stream()
+                    .filter(r -> r.getEventId().equals(reservations.getEventId()))
+                    .count();
+            if (currentReservations >= 100) {
+                throw new InvalidRequestException("Все места заняты. Невозможно создать бронирование.");
             }
+            
+            // Проверяем, не зарегистрирован ли уже этот студент (ID) на это событие
+            if (reservations.getCheckIn() != null && !reservations.getCheckIn().isEmpty()) {
+                boolean alreadyRegistered = reservationRepository.findAll().stream()
+                        .anyMatch(r -> r.getEventId().equals(reservations.getEventId()) 
+                                && reservations.getCheckIn().equals(r.getCheckIn()));
+                if (alreadyRegistered) {
+                    throw new InvalidRequestException("Вы уже зарегистрированы на это событие. Один ID может зарегистрироваться только один раз на каждое событие.");
+                }
+            }
+            
+            Reservation savedReservation = reservationRepository.save(reservations);
+            IdEntity idEntity = new IdEntity();
+            idEntity.setId(savedReservation.getId());
+            return idEntity;
         } else {
             //Throw error if the Inventory ID does not exist
             throw new InvalidRequestException(ErrorMessages.INVALID_EVENT_IN_RESERVATION);
@@ -103,9 +120,6 @@ public class ReservationServiceImp implements ReservationService {
     public boolean validateEventExistenceById(Integer id) {
         if (!eventRepository.existsById(id)) {
             throw new InvalidRequestException(ErrorMessages.INVALID_ID_EXISTENCE);
-        } else if (eventRepository.getById(id).getAvailableFrom() == null && eventRepository.getById(id).getAvailableTo() == null) {  //TODO getById is deprecated
-            //Checks if the inventory has available to and available from dates, if not then throw an error as a reservation cannot be made.
-            throw new InvalidRequestException(ErrorMessages.EMPTY_EVENT_DATES);
         } else {
             return true;
         }
@@ -130,35 +144,16 @@ public class ReservationServiceImp implements ReservationService {
 
     /**
      * Checks to see if a user specified Reservation overlaps with a pre-existing Reservation in the database
+     * Упрощенная версия - так как checkIn/checkOut больше не используются, просто проверяем количество
      *
      * @param reservations
      * @return
      */
     @Override
     public boolean reservationOverlaps(Reservation reservations) {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-
-        return reservationRepository.findAll().stream().anyMatch(dataBaseRes -> {
-            //If two reservations have the same inventory id, then compare their check in and checkout dates
-            if (dataBaseRes.getEventId() == reservations.getEventId()) {
-                try {
-                    int checkInBeforeDbCheckOut = sdf.parse(reservations.getCheckIn()).compareTo(sdf.parse(dataBaseRes.getCheckOut()));
-                    int checkOutBeforeDbCheckIn = sdf.parse(reservations.getCheckOut()).compareTo(sdf.parse(dataBaseRes.getCheckIn()));
-                    log.debug("check in int " + checkInBeforeDbCheckOut);
-                    log.debug("check out int " + checkOutBeforeDbCheckIn);
-                    if (checkInBeforeDbCheckOut == 0 || checkOutBeforeDbCheckIn == 0) {
-                        return true;
-                    } else {
-                        return checkInBeforeDbCheckOut != checkOutBeforeDbCheckIn;
-                    }
-                } catch (ParseException e) {
-                    throw new InvalidRequestException(ErrorMessages.PARSE_ERROR);
-                }
-            } else {
-                return false;
-            }
-
-        });
+        // Упрощенная логика - так как даты больше не используются,
+        // просто возвращаем false (перекрытий нет, так как нет дат для сравнения)
+        return false;
     }
 
     /**

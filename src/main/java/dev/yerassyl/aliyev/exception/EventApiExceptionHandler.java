@@ -23,6 +23,21 @@ public class EventApiExceptionHandler {
         return handleBadRequest(e);
     }
 
+    /**
+     * Exception handler for all other exceptions.
+     *
+     * @param e Exception
+     */
+    @ExceptionHandler(value = Exception.class)
+    public ResponseEntity<ApiErrorMessage> handleGenericException(Exception e) {
+        log.error("Internal server error: ", e); // get full stacktrace
+        String message = e.getMessage() != null ? e.getMessage() : "Internal server error";
+        return new ResponseEntity<>(
+            new ApiErrorMessage(HttpStatus.INTERNAL_SERVER_ERROR, message), 
+            HttpStatus.INTERNAL_SERVER_ERROR
+        );
+    }
+
     private ResponseEntity<ApiErrorMessage> handleBadRequest(Exception e) {
         log.error(HttpStatus.BAD_REQUEST.getReasonPhrase(), e); // get full stacktrace
         return new ResponseEntity<>(new ApiErrorMessage(HttpStatus.BAD_REQUEST, e.getMessage()), HttpStatus.BAD_REQUEST);

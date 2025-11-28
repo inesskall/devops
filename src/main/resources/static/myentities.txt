@@ -1,0 +1,59 @@
+id 1
+{
+  "name": "Конференция по ИИ",
+  "type": "CONFERENCE",
+  "description": "Узнайте о последних достижениях в области искусственного интеллекта!",
+  "availableFrom": "2025-11-28",
+  "availableTo": "2025-11-29",
+  "status": true
+}
+
+id 2
+{
+  "name": "Мастер-класс по веб-дизайну",
+  "type": "WORKSHOP",
+  "description": "Практический мастер-класс по современному веб-дизайну",
+  "availableFrom": "2025-11-16",
+  "availableTo": "2025-11-17",
+  "status": true
+}
+
+id 3
+{
+  "name": "Семинар по бизнесу",
+  "type": "WORKSHOP",
+  "description": "Как начать собственный бизнес: советы от экспертов",
+  "availableFrom": "2025-11-08",
+  "availableTo": "2025-11-09",
+  "status": true
+}
+
+id 4
+{
+  "name": "Музыкальный фестиваль",
+  "type": "CONCERT",
+  "description": "Музыка, танцы и атмосфера настоящего праздника",
+  "availableFrom": "2025-11-12",
+  "availableTo": "2025-11-13",
+  "status": true
+}
+
+id 5
+{
+  "name": "конференция QA инженеров",
+  "type": "CONFERENCE",
+  "description": "First QA MeetUP in SDU University! Как работать в QA и с чего начинать?",
+  "availableFrom": "2025-10-25",
+  "availableTo": "2025-10-28",
+  "status": true
+}
+
+id 6
+{
+  "name": "Open Air",
+  "type": "CONCERT",
+  "description": "Open Air with Music club",
+  "availableFrom": "2025-12-1",
+  "availableTo": "2025-12-1",
+  "status": true
+}

@@ -9,6 +9,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Component
@@ -19,6 +20,7 @@ public class EventsAndReservationsLoader implements CommandLineRunner {
     private final ReservationRepository reservationRepository;
 
     @Override
+    @Transactional
     public void run(String... args) throws Exception {
 
         if (eventRepository.count() == 0) {
@@ -31,43 +33,36 @@ public class EventsAndReservationsLoader implements CommandLineRunner {
             loadReservationObject();
         }
 
-
+        // Примечание: Если нужно, чтобы ID начинался с 0, выполните вручную в PostgreSQL:
+        // SELECT setval(pg_get_serial_sequence('event', 'id'), -1, false);
+        // SELECT setval(pg_get_serial_sequence('reservation', 'id'), -1, false);
     }
 
     private void loadReservationObject() {
+        // Упрощенная версия - без checkIn, checkOut и guests
         Reservation r1 = Reservation.builder()
                 .eventId(1)
-                .checkIn("2019-01-01")
-                .checkOut("2019-12-31")
-                .guests(2)
+                .status(true)
                 .build();
 
         Reservation r2 = Reservation.builder()
                 .eventId(2)
-                .checkIn("2020-01-01")
-                .checkOut("2020-12-31")
-                .guests(3)
+                .status(true)
                 .build();
 
         Reservation r3 = Reservation.builder()
                 .eventId(3)
-                .checkIn("2021-01-01")
-                .checkOut("2021-12-31")
-                .guests(4)
+                .status(true)
                 .build();
 
         Reservation r4 = Reservation.builder()
                 .eventId(4)
-                .checkIn("2022-01-01")
-                .checkOut("2022-12-31")
-                .guests(5)
+                .status(true)
                 .build();
 
         Reservation r5 = Reservation.builder()
                 .eventId(5)
-                .checkIn("2023-01-01")
-                .checkOut("2023-12-31")
-                .guests(6)
+                .status(true)
                 .build();
 
         reservationRepository.save(r1);

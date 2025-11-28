@@ -18,8 +18,8 @@ public class ReservationValidator extends BaseValidator {
      * @param reservation
      */
     public static void validateReservationPOST(Reservation reservation) {
-        validateDates(reservation.getCheckIn(), reservation.getCheckOut());
-        validateGuest(reservation.getGuests());
+        // Упрощенная валидация - проверяем только наличие eventId
+        // checkIn, checkOut и guests больше не обязательны
     }
 
     /**

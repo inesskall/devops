@@ -9,7 +9,7 @@ import java.util.List;
 public interface ReservationService {
     List<Reservation> getAllReservations();
     Reservation getReservation(Integer id);
-    IdEntity saveReservation(Reservation reservations);
+    IdEntity saveReservation(Reservation reservations, Integer userId);
     SuccessEntity deleteReservation(Integer id);
     boolean validateEventExistenceById(Integer id);
     boolean dateIsBefore(String date1, String date2);

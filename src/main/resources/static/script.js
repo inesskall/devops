@@ -4,6 +4,9 @@ const API_BASE_URL = 'http://localhost:8080/api/v1';
 // Глобальная переменная для хранения событий
 let events = [];
 
+// Глобальная переменная для хранения текущего пользователя
+let currentUser = null;
+
 // ФУНКЦИИ ДЛЯ РАБОТЫ С API
 async function fetchEvents() {
     try {
@@ -40,6 +43,7 @@ async function createReservation(reservationData) {
             headers: {
                 'Content-Type': 'application/json',
             },
+            credentials: 'include', // Важно для отправки сессии
             body: JSON.stringify(reservationData)
         });
         if (!response.ok) {
@@ -50,6 +54,53 @@ async function createReservation(reservationData) {
     } catch (error) {
         console.error('Ошибка при создании бронирования:', error);
         throw error;
+    }
+}
+
+// ФУНКЦИИ ДЛЯ РАБОТЫ С ПОЛЬЗОВАТЕЛЕМ
+async function getCurrentUser() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/user/current`, {
+            credentials: 'include'
+        });
+        if (!response.ok) {
+            return null;
+        }
+        const user = await response.json();
+        return user;
+    } catch (error) {
+        console.error('Ошибка при получении пользователя:', error);
+        return null;
+    }
+}
+
+async function logout() {
+    try {
+        await fetch(`${API_BASE_URL}/logout`, {
+            method: 'POST',
+            credentials: 'include'
+        });
+        localStorage.removeItem('user');
+        currentUser = null;
+        updateAuthUI();
+        alert('Вы успешно вышли из системы');
+    } catch (error) {
+        console.error('Ошибка при выходе:', error);
+    }
+}
+
+function updateAuthUI() {
+    const authButtons = document.getElementById('auth-buttons');
+    const userInfo = document.getElementById('user-info');
+    const userName = document.getElementById('user-name');
+    
+    if (currentUser) {
+        if (authButtons) authButtons.style.display = 'none';
+        if (userInfo) userInfo.style.display = 'inline';
+        if (userName) userName.textContent = `${currentUser.name} ${currentUser.surname}`;
+    } else {
+        if (authButtons) authButtons.style.display = 'inline';
+        if (userInfo) userInfo.style.display = 'none';
     }
 }
 
@@ -271,27 +322,6 @@ function searchEvents() {
 // МОДАЛЬНОЕ ОКНО
 let currentEventId = null;
 
-function openModal(eventId) {
-    const event = events.find(ev => ev.id === eventId);
-    if (!event) return;
-
-    currentEventId = eventId;
-    const modalTitle = document.getElementById("modalEventTitle");
-    if (modalTitle) {
-        modalTitle.textContent = event.title;
-    }
-    const modal = document.getElementById("bookingModal");
-    if (modal) {
-        modal.style.display = "block";
-    }
-    
-    // Очистка формы
-    const form = document.getElementById("bookingForm");
-    if (form) {
-        form.reset();
-    }
-}
-
 function closeModal() {
     const modal = document.getElementById("bookingModal");
     if (modal) {
@@ -320,6 +350,13 @@ if (bookingForm) {
     bookingForm.addEventListener("submit", async (e) => {
         e.preventDefault();
 
+        // Проверка авторизации
+        if (!currentUser) {
+            alert("Для бронирования необходимо войти в систему");
+            window.location.href = 'login.html';
+            return;
+        }
+
         if (!currentEventId) {
             closeModal();
             return;
@@ -338,23 +375,11 @@ if (bookingForm) {
             return;
         }
 
-        // Получение данных формы
-        const bookingId = document.getElementById("bookingId").value.trim();
-        const bookingName = document.getElementById("bookingName").value.trim();
-        const bookingSurname = document.getElementById("bookingSurname").value.trim();
-
-        // Валидация
-        if (!bookingId || !bookingName || !bookingSurname) {
-            alert("Пожалуйста, заполните все поля!");
-            return;
-        }
-
         try {
             // Создаем бронирование через API
-            // checkIn используется для хранения ID студента (чтобы предотвратить двойную регистрацию)
+            // checkIn будет установлен на бэкенде из userId сессии
             const reservationData = {
                 eventId: currentEventId,
-                checkIn: bookingId, // Сохраняем ID студента для проверки уникальности
                 status: true
             };
 
@@ -381,13 +406,116 @@ if (bookingForm) {
     });
 }
 
+// Обновление формы бронирования при открытии модального окна
+function openModal(eventId) {
+    // Проверяем авторизацию
+    if (!currentUser) {
+        alert("Для бронирования необходимо войти в систему");
+        window.location.href = 'login.html';
+        return;
+    }
+    
+    const event = events.find(ev => ev.id === eventId);
+    if (!event) return;
+
+    currentEventId = eventId;
+    const modalTitle = document.getElementById("modalEventTitle");
+    if (modalTitle) {
+        modalTitle.textContent = `Забронировать: ${event.title}`;
+    }
+    
+    // Заполняем поля формы данными пользователя
+    const bookingName = document.getElementById("bookingName");
+    const bookingSurname = document.getElementById("bookingSurname");
+    
+    if (bookingName && bookingSurname && currentUser) {
+        bookingName.value = currentUser.name;
+        bookingSurname.value = currentUser.surname;
+    }
+    
+    const modal = document.getElementById("bookingModal");
+    if (modal) {
+        modal.style.display = "block";
+    }
+}
+
 // ОБРАБОТКА ФОРМЫ КОНТАКТОВ
+async function submitFeedback(feedbackData) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/feedback`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(feedbackData)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ message: 'Ошибка сервера' }));
+            throw new Error(errorData.message || 'Ошибка при отправке сообщения');
+        }
+
+        const result = await response.json();
+        return result;
+    } catch (error) {
+        console.error('Ошибка при отправке обратной связи:', error);
+        throw error;
+    }
+}
+
 const contactForm = document.getElementById("contactForm");
 if (contactForm) {
-    contactForm.addEventListener("submit", e => {
+    contactForm.addEventListener("submit", async (e) => {
         e.preventDefault();
-        alert("Ваше сообщение отправлено. Мы свяжемся с вами!");
-        e.target.reset();
+        
+        const name = document.getElementById("contactName").value.trim();
+        const email = document.getElementById("contactEmail").value.trim();
+        const subject = document.getElementById("contactSubject").value.trim();
+        const message = document.getElementById("contactMessage").value.trim();
+        
+        // Валидация на клиенте
+        if (!name || !email || !subject || !message) {
+            alert("Пожалуйста, заполните все поля!");
+            return;
+        }
+        
+        // Проверка email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            alert("Пожалуйста, введите корректный email адрес!");
+            return;
+        }
+        
+        try {
+            // Показываем индикатор загрузки
+            const submitButton = contactForm.querySelector('button[type="submit"]');
+            const originalText = submitButton.textContent;
+            submitButton.disabled = true;
+            submitButton.textContent = 'Отправка...';
+            
+            const feedbackData = {
+                name: name,
+                email: email,
+                subject: subject,
+                message: message
+            };
+            
+            await submitFeedback(feedbackData);
+            
+            alert("Ваше сообщение отправлено. Мы свяжемся с вами!");
+            contactForm.reset();
+            
+        } catch (error) {
+            console.error('Ошибка:', error);
+            alert("Произошла ошибка при отправке сообщения. Пожалуйста, попробуйте позже.");
+        } finally {
+            // Восстанавливаем кнопку
+            const submitButton = contactForm.querySelector('button[type="submit"]');
+            if (submitButton) {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Отправить';
+            }
+        }
     });
 }
 
@@ -417,6 +545,24 @@ if (createEventModal) {
 }
 
 // Инициализация при загрузке страницы
-document.addEventListener('DOMContentLoaded', () => {
-    initializeData();
-});
+async function init() {
+    // Загружаем пользователя из localStorage или сессии
+    const userFromStorage = localStorage.getItem('user');
+    if (userFromStorage) {
+        currentUser = JSON.parse(userFromStorage);
+    } else {
+        // Пытаемся получить пользователя из сессии
+        currentUser = await getCurrentUser();
+        if (currentUser) {
+            localStorage.setItem('user', JSON.stringify(currentUser));
+        }
+    }
+    
+    // Обновляем UI авторизации
+    updateAuthUI();
+    
+    // Загружаем данные событий
+    await initializeData();
+}
+
+document.addEventListener('DOMContentLoaded', init);

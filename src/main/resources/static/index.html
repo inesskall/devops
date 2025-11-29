@@ -23,6 +23,14 @@
                 <a href="#" onclick="showPage('about'); return false;">О нас</a>
                 <a href="#" onclick="showPage('events'); return false;">События</a>
                 <a href="#" onclick="showPage('contacts'); return false;">Контакты</a>
+                <span id="auth-buttons">
+                    <a href="login.html" id="login-link">Войти</a>
+                    <a href="register.html" id="register-link">Регистрация</a>
+                </span>
+                <span id="user-info" style="display: none;">
+                    <span id="user-name" style="margin-right: 1rem;"></span>
+                    <a href="#" id="logout-link" onclick="logout(); return false;">Выйти</a>
+                </span>
             </nav>
         </div>
     </div>
@@ -182,19 +190,15 @@
         <h2 id="modalEventTitle">Забронировать место</h2>
         <form id="bookingForm">
             <div class="form-group">
-                <label for="bookingId">ID студента</label>
-                <input type="text" id="bookingId" placeholder="Введите ваш ID" required>
-            </div>
-            <div class="form-group">
                 <label for="bookingName">Имя</label>
-                <input type="text" id="bookingName" placeholder="Введите ваше имя" required>
+                <input type="text" id="bookingName" readonly style="background-color: #f5f5f5;">
             </div>
             <div class="form-group">
                 <label for="bookingSurname">Фамилия</label>
-                <input type="text" id="bookingSurname" placeholder="Введите вашу фамилию" required>
+                <input type="text" id="bookingSurname" readonly style="background-color: #f5f5f5;">
             </div>
             <p style="font-size: 0.9em; color: #666; margin-top: 10px;">
-                Бронирование будет создано на даты проведения события
+                Бронирование будет создано на даты проведения события. Данные берутся из вашего аккаунта.
             </p>
 
             <button type="submit" class="btn btn-primary btn-full">Забронировать</button>

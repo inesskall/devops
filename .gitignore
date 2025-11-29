@@ -159,6 +159,9 @@ $RECYCLE.BIN/
 *.log.*
 *.gz
 
+# Feedback files
+feedback/
+
 # Others
 *.class
 *.*~
@@ -186,4 +189,4 @@ $RECYCLE.BIN/
 *_BACKUP_*.txt
 *_BASE_*.txt
 *_LOCAL_*.txt
-*_REMOTE_*.txt
+*_REMOTE_*.txtfeedback/

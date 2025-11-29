@@ -6,8 +6,10 @@ import dev.yerassyl.aliyev.dto.SuccessEntity;
 import dev.yerassyl.aliyev.entity.Event;
 import dev.yerassyl.aliyev.entity.Reservation;
 import dev.yerassyl.aliyev.exception.InvalidRequestException;
+import dev.yerassyl.aliyev.entity.User;
 import dev.yerassyl.aliyev.repository.EventRepository;
 import dev.yerassyl.aliyev.repository.ReservationRepository;
+import dev.yerassyl.aliyev.repository.UserRepository;
 import dev.yerassyl.aliyev.service.ReservationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +30,7 @@ import java.util.List;
 public class ReservationServiceImp implements ReservationService {
     private final ReservationRepository reservationRepository;
     private final EventRepository eventRepository;
+    private final UserRepository userRepository;
 
     /**
      * Returns all existing Reservation objects in the database
@@ -52,11 +55,16 @@ public class ReservationServiceImp implements ReservationService {
     /**
      * Saves a user created Reservation object to the database
      * @param reservations
+     * @param userId ID пользователя из сессии
      * @return
      */
     @Override
-    public IdEntity saveReservation(Reservation reservations) {
+    public IdEntity saveReservation(Reservation reservations, Integer userId) {
         Integer reservationsInventoryId = reservations.getEventId();
+
+        // Получаем пользователя по userId
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new InvalidRequestException("Пользователь не найден"));
 
         //boolean to determine if the Reservation is valid through the existence of the inventory ID.
         //if the inventory ID exists, then continue
@@ -76,15 +84,17 @@ public class ReservationServiceImp implements ReservationService {
                 throw new InvalidRequestException("Все места заняты. Невозможно создать бронирование.");
             }
             
-            // Проверяем, не зарегистрирован ли уже этот студент (ID) на это событие
-            if (reservations.getCheckIn() != null && !reservations.getCheckIn().isEmpty()) {
-                boolean alreadyRegistered = reservationRepository.findAll().stream()
-                        .anyMatch(r -> r.getEventId().equals(reservations.getEventId()) 
-                                && reservations.getCheckIn().equals(r.getCheckIn()));
-                if (alreadyRegistered) {
-                    throw new InvalidRequestException("Вы уже зарегистрированы на это событие. Один ID может зарегистрироваться только один раз на каждое событие.");
-                }
+            // Проверяем, не зарегистрирован ли уже этот пользователь на это событие
+            // Используем studentId пользователя для проверки
+            boolean alreadyRegistered = reservationRepository.findAll().stream()
+                    .anyMatch(r -> r.getEventId().equals(reservations.getEventId()) 
+                            && user.getStudentId().equals(r.getCheckIn()));
+            if (alreadyRegistered) {
+                throw new InvalidRequestException("Вы уже зарегистрированы на это событие. Один аккаунт может зарегистрироваться только один раз на каждое событие.");
             }
+            
+            // Устанавливаем checkIn как studentId пользователя
+            reservations.setCheckIn(user.getStudentId());
             
             Reservation savedReservation = reservationRepository.save(reservations);
             IdEntity idEntity = new IdEntity();

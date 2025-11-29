@@ -5,6 +5,7 @@ import dev.yerassyl.aliyev.dto.SuccessEntity;
 import dev.yerassyl.aliyev.entity.Reservation;
 import dev.yerassyl.aliyev.service.ReservationService;
 import dev.yerassyl.aliyev.validator.ReservationValidator;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -49,13 +50,18 @@ public class ReservationController {
      * End point to update user specified Reservation
      *
      * @param reservation
+     * @param session
      * @return
      */
     @PostMapping(value = "/reservation", produces = "application/json")
-    public IdEntity saveReservation(@RequestBody Reservation reservation){
+    public IdEntity saveReservation(@RequestBody Reservation reservation, HttpSession session){
+        Integer userId = (Integer) session.getAttribute("userId");
+        if (userId == null) {
+            throw new dev.yerassyl.aliyev.exception.InvalidRequestException("Необходимо войти в систему для создания бронирования");
+        }
         ReservationValidator.validateReservationPOST(reservation);
-        log.info("Save a user specified reservation...");
-        return reservationService.saveReservation(reservation);
+        log.info("Save a user specified reservation for userId: {}", userId);
+        return reservationService.saveReservation(reservation, userId);
     }
 
     /**

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Регистрация - TicketHub</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .auth-container {
+            max-width: 450px;
+            margin: 100px auto;
+            padding: 2.5rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        .auth-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .auth-header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            color: #1a1a1a;
+        }
+        .auth-header p {
+            color: #666;
+            font-size: 0.95rem;
+        }
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .form-group label {
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #333;
+        }
+        .form-group input {
+            padding: 0.875rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #0a0a0a;
+        }
+        .btn-auth {
+            padding: 0.875rem;
+            background: #0a0a0a;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-auth:hover {
+            background: #333;
+        }
+        .auth-footer {
+            text-align: center;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e0e0e0;
+        }
+        .auth-footer a {
+            color: #0a0a0a;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .auth-footer a:hover {
+            text-decoration: underline;
+        }
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+        .error-message.show {
+            display: block;
+        }
+        .success-message {
+            background: #efe;
+            color: #3c3;
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+        .success-message.show {
+            display: block;
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 1rem;
+            color: #666;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        .back-link:hover {
+            color: #0a0a0a;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <a href="index.html" class="back-link">← Назад на главную</a>
+        <div class="auth-header">
+            <h1>Регистрация</h1>
+            <p>Создайте аккаунт для бронирования событий</p>
+        </div>
+        
+        <div class="error-message" id="errorMessage"></div>
+        <div class="success-message" id="successMessage"></div>
+        
+        <form class="auth-form" id="registerForm">
+            <div class="form-group">
+                <label for="studentId">ID студента</label>
+                <input type="text" id="studentId" placeholder="Введите ваш ID" required>
+            </div>
+            <div class="form-group">
+                <label for="name">Имя</label>
+                <input type="text" id="name" placeholder="Введите ваше имя" required>
+            </div>
+            <div class="form-group">
+                <label for="surname">Фамилия</label>
+                <input type="text" id="surname" placeholder="Введите вашу фамилию" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Пароль</label>
+                <input type="password" id="password" placeholder="Минимум 4 символа" required minlength="4">
+            </div>
+            <button type="submit" class="btn-auth">Зарегистрироваться</button>
+        </form>
+        
+        <div class="auth-footer">
+            <p>Уже есть аккаунт? <a href="login.html">Войти</a></p>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8080/api/v1';
+        
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const errorMessage = document.getElementById('errorMessage');
+            const successMessage = document.getElementById('successMessage');
+            errorMessage.classList.remove('show');
+            successMessage.classList.remove('show');
+            
+            const studentId = document.getElementById('studentId').value.trim();
+            const name = document.getElementById('name').value.trim();
+            const surname = document.getElementById('surname').value.trim();
+            const password = document.getElementById('password').value;
+            
+            if (!studentId || !name || !surname || !password) {
+                errorMessage.textContent = 'Пожалуйста, заполните все поля';
+                errorMessage.classList.add('show');
+                return;
+            }
+            
+            if (password.length < 4) {
+                errorMessage.textContent = 'Пароль должен содержать минимум 4 символа';
+                errorMessage.classList.add('show');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include', // Важно для сохранения сессии
+                    body: JSON.stringify({
+                        studentId: studentId,
+                        name: name,
+                        surname: surname,
+                        password: password
+                    })
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Ошибка при регистрации');
+                }
+                
+                const userData = await response.json();
+                
+                // Сохраняем данные пользователя в localStorage
+                localStorage.setItem('user', JSON.stringify(userData));
+                
+                successMessage.textContent = 'Регистрация успешна! Перенаправление...';
+                successMessage.classList.add('show');
+                
+                // Перенаправляем на главную страницу через 1 секунду
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1000);
+            } catch (error) {
+                errorMessage.textContent = error.message || 'Ошибка при регистрации. Попробуйте еще раз.';
+                errorMessage.classList.add('show');
+            }
+        });
+    </script>
+</body>
+</html>
+

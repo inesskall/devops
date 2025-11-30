@@ -10,6 +10,21 @@ jobs:
   build-test-and-docker:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: event_reservation_db
+          POSTGRES_USER: event_user
+          POSTGRES_PASSWORD: event_pass
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U event_user -d event_reservation_db"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
@@ -29,13 +44,24 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
+      - name: Wait for Postgres
+        run: |
+          for i in {1..10}; do
+            nc -z localhost 5432 && echo "Postgres is up" && exit 0
+            echo "Waiting for Postgres..."
+            sleep 3
+          done
+          echo "Postgres did not start in time" && exit 1
+
       - name: Run tests
         run: ./mvnw -B test
+
       - name: Build JAR
         run: ./mvnw -B package -DskipTests
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
       - name: Login to Docker Hub
         if: github.event_name == 'push'
         uses: docker/login-action@v3

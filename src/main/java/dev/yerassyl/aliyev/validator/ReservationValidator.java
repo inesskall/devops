@@ -29,7 +29,7 @@ public class ReservationValidator extends BaseValidator {
      */
     public static void validateGuest(Integer guests) {
         if (guests == null || guests <= 0) {
-            log.error("Invalid guests number: '{}', guests must be a non-zero number.", guests);
+            log.error("Invalid guests number: '{}', guests must be a non-zero number. guest", guests);
             throw new InvalidRequestException(INVALID_GUESTS);
         }
     }

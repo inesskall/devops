@@ -15,7 +15,7 @@ spec:
       containers:
         - name: event-reservation-api
           image: inesskal/event-reservation-api:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
           env:

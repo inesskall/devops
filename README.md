@@ -128,7 +128,20 @@ CREATE TYPE valid_types_of_hotels_enum AS ENUM ('CONFERENCE', 'WORKSHOP', 'FESTI
 ./mvnw clean package
 java -jar target/event-booking-api-0.0.1-SNAPSHOT.jar
 ```
+#### Или через minikube:
+```bash
+minikube start
+kubectl apply -f k8s/postgres-pvc.yaml
+kubectl apply -f k8s/postgres-deployment.yaml
+kubectl apply -f k8s/postgres-service.yaml
+kubectl apply -f k8s/event-reservation-deployment.yaml
+kubectl apply -f k8s/event-reservation-service.yaml
 
+kubectl get pods
+kubectl get svc
+
+minikube service event-reservation-api --url
+```
 Приложение запустится на порту **8080**.
 
 ### 5. Доступ к приложению
